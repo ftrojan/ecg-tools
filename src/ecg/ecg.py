@@ -65,17 +65,12 @@ class P2C:
 
     @classmethod
     def from_df(cls, df: pd.DataFrame) -> "P2C":
-        own = {
-            Ownership(person=x["person"], company=x["company"], share=x["share"])
-            for i, x in df.iterrows()
-        }
+        own = {Ownership(person=x["person"], company=x["company"], share=x["share"]) for i, x in df.iterrows()}
         pers = {x.person for x in own}
         comp = {x.company for x in own}
         p2c = {p: {x for x in own if x.person == p} for p in pers}
         c2p = {c: {x for x in own if x.company == c} for c in comp}
-        logger.info(
-            f"{len(own)} ownerships for {len(pers)} persons and {len(comp)} companies."
-        )
+        logger.info(f"{len(own)} ownerships for {len(pers)} persons and {len(comp)} companies.")
         result = cls(
             ownerships=own,
             persons=pers,
@@ -127,9 +122,7 @@ class P2C:
             unique_linked |= {c.company for c in linked_companies_level}
             n_added = len(linked_companies_level)
         if n_added > 0:
-            logger.warning(
-                f"{n_added=} linked companies in level {levels}. Consider increasing levels."
-            )
+            logger.warning(f"{n_added=} linked companies in level {levels}. Consider increasing levels.")
         return linked_companies
 
 
@@ -180,10 +173,7 @@ class C2C:
 
     @classmethod
     def from_df(cls, df: pd.DataFrame) -> "C2C":
-        pas = {
-            Parentship(c1=x["c1"], c2=x["c2"], share=x["share"])
-            for i, x in df.iterrows()
-        }
+        pas = {Parentship(c1=x["c1"], c2=x["c2"], share=x["share"]) for i, x in df.iterrows()}
         ps = {x.c1 for x in pas}
         cs = {x.c2 for x in pas}
         comp = ps | cs
@@ -222,9 +212,7 @@ class C2C:
             used_companies |= used_companies_level
             n_added = len(used_companies_level)
         if n_added > 0:
-            logger.warning(
-                f"{n_added=} ancestors of {c} in level {levels}. Consider increasing levels."
-            )
+            logger.warning(f"{n_added=} ancestors of {c} in level {levels}. Consider increasing levels.")
         return ancestors
 
     def get_descendants(self, c: str, levels: int) -> set[Ancestor]:
@@ -243,9 +231,7 @@ class C2C:
             used_companies |= used_companies_level
             n_added = len(used_companies_level)
         if n_added > 0:
-            logger.warning(
-                f"{n_added=} descendants of {c} in level {levels}. Consider increasing levels."
-            )
+            logger.warning(f"{n_added=} descendants of {c} in level {levels}. Consider increasing levels.")
         return descendants
 
 
@@ -305,9 +291,7 @@ def calc_final_share(paths: set[OwnershipPath]) -> float:
     return final_share
 
 
-def get_beneficial_owners(
-    c: str, p2c: P2C, c2c: C2C, levels: int
-) -> list[ChainedOwnership]:
+def get_beneficial_owners(c: str, p2c: P2C, c2c: C2C, levels: int) -> list[ChainedOwnership]:
     """Calculate all beneficial owners of a company."""
     direct_ownerships = {
         x.person: ChainedOwnership(
