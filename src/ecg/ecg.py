@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class Ownership:
-
     person: str
     company: str
     share: float
@@ -20,7 +19,6 @@ class Ownership:
 
 @dataclass(frozen=True)
 class SameOwner:
-
     person: str
     c1: str
     share1: float
@@ -34,7 +32,6 @@ class SameOwner:
 
 @dataclass(frozen=True)
 class LinkedCompany:
-
     company: str
     link: list[SameOwner]
 
@@ -60,7 +57,6 @@ class LinkedCompany:
 
 @dataclass(frozen=True)
 class P2C:
-
     ownerships: set[Ownership]
     persons: set[str]
     companies: set[str]
@@ -77,7 +73,9 @@ class P2C:
         comp = {x.company for x in own}
         p2c = {p: {x for x in own if x.person == p} for p in pers}
         c2p = {c: {x for x in own if x.company == c} for c in comp}
-        logger.info(f"{len(own)} ownerships for {len(pers)} persons and {len(comp)} companies.")
+        logger.info(
+            f"{len(own)} ownerships for {len(pers)} persons and {len(comp)} companies."
+        )
         result = cls(
             ownerships=own,
             persons=pers,
@@ -98,7 +96,15 @@ class P2C:
         result = {
             LinkedCompany(
                 company=x2.company,
-                link=[SameOwner(person=x1.person, c1=c, share1=x1.share, c2=x2.company, share2=x2.share)]
+                link=[
+                    SameOwner(
+                        person=x1.person,
+                        c1=c,
+                        share1=x1.share,
+                        c2=x2.company,
+                        share2=x2.share,
+                    )
+                ],
             )
             for x1 in c2p_ownerships
             for x2 in self.get_owned_companies(x1.person)
@@ -110,7 +116,7 @@ class P2C:
         linked_companies = self.get_linked_companies_one_level(c)
         unique_linked = {c} | {c.company for c in linked_companies}
         n_added = len(linked_companies)
-        for level in range(2, levels+1):
+        for level in range(2, levels + 1):
             linked_companies_level = {
                 LinkedCompany(link.company, cx.link + link.link)
                 for cx in linked_companies
@@ -121,7 +127,9 @@ class P2C:
             unique_linked |= {c.company for c in linked_companies_level}
             n_added = len(linked_companies_level)
         if n_added > 0:
-            logger.warning(f"{n_added=} linked companies in level {levels}. Consider increasing levels.")
+            logger.warning(
+                f"{n_added=} linked companies in level {levels}. Consider increasing levels."
+            )
         return linked_companies
 
 
@@ -138,7 +146,6 @@ class Parentship:
 
 @dataclass(frozen=True)
 class Ancestor:
-
     company: str
     link: list[Parentship]
 
@@ -164,7 +171,6 @@ class Ancestor:
 
 @dataclass(frozen=True)
 class C2C:
-
     parentships: set[Parentship]
     parents: set[str]
     childs: set[str]
@@ -201,13 +207,10 @@ class C2C:
         return self.pa2ch.get(c, set())
 
     def get_ancestors(self, c: str, levels: int) -> set[Ancestor]:
-        ancestors = {
-            Ancestor(company=x.c1, link=[x])
-            for x in self.get_parents(c)
-        }
+        ancestors = {Ancestor(company=x.c1, link=[x]) for x in self.get_parents(c)}
         used_companies = {c} | {a.company for a in ancestors}
         n_added = len(used_companies) - 1
-        for level in range(2, levels+1):
+        for level in range(2, levels + 1):
             ancestors_level = {
                 Ancestor(company=a2.c1, link=a1.link + [a2])
                 for a1 in ancestors
@@ -219,17 +222,16 @@ class C2C:
             used_companies |= used_companies_level
             n_added = len(used_companies_level)
         if n_added > 0:
-            logger.warning(f"{n_added=} ancestors of {c} in level {levels}. Consider increasing levels.")
+            logger.warning(
+                f"{n_added=} ancestors of {c} in level {levels}. Consider increasing levels."
+            )
         return ancestors
 
     def get_descendants(self, c: str, levels: int) -> set[Ancestor]:
-        descendants = {
-            Ancestor(company=x.c2, link=[x])
-            for x in self.get_children(c)
-        }
+        descendants = {Ancestor(company=x.c2, link=[x]) for x in self.get_children(c)}
         used_companies = {c} | {d.company for d in descendants}
         n_added = len(used_companies) - 1
-        for level in range(2, levels+1):
+        for level in range(2, levels + 1):
             descendants_level = {
                 Ancestor(company=d2.c2, link=d1.link + [d2])
                 for d1 in descendants
@@ -241,7 +243,9 @@ class C2C:
             used_companies |= used_companies_level
             n_added = len(used_companies_level)
         if n_added > 0:
-            logger.warning(f"{n_added=} descendants of {c} in level {levels}. Consider increasing levels.")
+            logger.warning(
+                f"{n_added=} descendants of {c} in level {levels}. Consider increasing levels."
+            )
         return descendants
 
 
@@ -301,7 +305,9 @@ def calc_final_share(paths: set[OwnershipPath]) -> float:
     return final_share
 
 
-def get_beneficial_owners(c: str, p2c: P2C, c2c: C2C, levels: int) -> list[ChainedOwnership]:
+def get_beneficial_owners(
+    c: str, p2c: P2C, c2c: C2C, levels: int
+) -> list[ChainedOwnership]:
     """Calculate all beneficial owners of a company."""
     direct_ownerships = {
         x.person: ChainedOwnership(
